@@ -1,30 +1,45 @@
 #include <stdio.h>
 #include <stdlib.h> 
 #include <assert.h>
+#include <stdbool.h>
 
 // ######################################### Déclarations de fonctions ###################################### //
 void verifArgs(int args);
 int tailleCalculEntree(char *argv[]);
-arbre_t *initArbreBinaire();
+noeud *initArbreBinaire();
 
-// ######################################### Strcutures de données ###################################### //
-typedef struct arbre_binaire
+// ######################################### Strcutures de données ###################################### /
+typedef enum
 {
-    char symb;
-    int val;
-    struct arbre_binaire *enfantGauche;
-    struct arbre_binaire *enfantDroit;
-}arbre_t;
+    VALEUR,
+    OPERATEUR
+}TypeNoeud;
+
+typedef struct noeud_t
+{
+    TypeNoeud type;
+    union 
+    {
+        int val;
+        char op;
+    }elt;
+    struct noeud_t *noeudGauche;
+    struct noeud_t *noeudDroit;
+}noeud;
+
+/* typedef struct arbre_t
+{
+    noeud *racine;
+}arbre; */
 
 // ######################################### Main ###################################### //
 int main(int args, char *argv[])
 {
     verifArgs(args);
     int tailleCalcul = tailleCalculEntree(argv);
-    arbre_t *arbre = initArbreBinaire();
+    noeud *racine = initArbreBinaire();
 
-
-    free(arbre);
+    free(racine);
     return 0;
 }
 
@@ -50,49 +65,61 @@ int tailleCalculEntree(char *argv[])
     return n;
 }
 
-arbre_t *initArbreBinaire()
+
+noeud *creerNoeudVal(int val)
 {
-    arbre_t *arbre = (arbre_t*) malloc(sizeof(arbre_t));
-    if (arbre == NULL)
-    {
-        printf("Echec de l'allocation de l'arbre.\n");
-        assert(0);
-    }
+    noeud *n = (noeud*) malloc(sizeof(noeud));
+    n->type = VALEUR;
+    n->elt.val = val;
 
-    arbre->symb = NULL;
-    arbre->val = NULL;
-    arbre->enfantDroit = NULL;
-    arbre->enfantGauche = NULL;
-
-    return arbre;
+    n->noeudDroit = NULL;
+    n->noeudGauche = NULL;
+    return n;
 
 }
 
-arbre_t creerNoeudVal(arbre_t a, int val)
+bool estFeuille(noeud *n)
+{
+    return (n->noeudDroit == NULL && n->noeudGauche == NULL);
+}
+
+noeud *creerNoeudOp(char op)
+{
+    noeud *n = (noeud*) malloc(sizeof(noeud));
+    n->type = OPERATEUR;
+    n->elt.op = op;
+
+    n->noeudDroit = NULL;
+    n->noeudGauche = NULL;
+    return n;
+
+}
+
+
+
+noeud *insererGauche(noeud *r, int val)
 {
     
+
 }
 
-arbre_t *insererGauche(arbre_t *a, int val, char symb)
+noeud *insererDroit(noeud *r, int val, char symb)
 {
 
-    a->enfantGauche = 
 }
 
 
-void free_arbre(arbre_t *a)
+void free_arbre(noeud *r)
 {
-    free(a);
+    if (r == NULL) return 
+    free_arbre(r->noeudDroit);
+    free_arbre(r->noeudGauche);
 }
 
-int remplirArbre(arbre_t *a, char **argv, int tailleCalcul)
+int remplirArbre(noeud *r, char **argv, int tailleCalcul)
 {
-    for (int i=0; i<tailleCalcul; i++)
-    {
-        if (i%2 == 0)
-        {
-            a->val = atoi(argv[1][i]);
-        }
-            
-    }
+    int i = 0, nb1 = 0, nb2 = 0;
+    char op = '\0';
+    
+    char 
 }
