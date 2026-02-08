@@ -8,7 +8,7 @@
 // ######################################### Déclarations de fonctions ###################################### //
 void verifArgs(int args);
 int tailleCalculEntree(char *argv[]);
-noeud *initArbreBinaire();
+noeud_t *initArbreBinaire();
 
 // ######################################### Strcutures de données ###################################### /
 typedef enum
@@ -27,11 +27,25 @@ typedef struct noeud_t
     }elt;
     struct noeud_t *noeudGauche;
     struct noeud_t *noeudDroit;
-}noeud;
+}noeud_t;
+
+typedef struct 
+{
+    int *priorite;
+    noeud_t **termes;
+
+}expression_t;
+
+typedef struct
+{
+    noeud_t *racine;
+    expression_t *exprDroite;
+    expression_t *exprGauche;
+}racine_t;
 
 /* typedef struct arbre_t
 {
-    noeud *racine;
+    noeud_t *racine;
 }arbre; */
 
 // ######################################### Main ###################################### //
@@ -39,7 +53,7 @@ int main(int args, char *argv[])
 {
     verifArgs(args);
     int tailleCalcul = tailleCalculEntree(argv);
-    noeud *racine = initArbreBinaire();
+    noeud_t *racine = initArbreBinaire();
 
     free(racine);
     return 0;
@@ -70,9 +84,9 @@ int tailleCalculEntree(char *argv[])
 }
 
 
-noeud *creerNoeudVal(int val)
+noeud_t *creerNoeudVal(int val)
 {
-    noeud *n = (noeud*) malloc(sizeof(noeud));
+    noeud_t *n = (noeud*) malloc(sizeof(noeud));
     n->type = VALEUR;
     n->elt.val = val;
 
@@ -82,9 +96,9 @@ noeud *creerNoeudVal(int val)
 
 }
 
-noeud *creerNoeudOp(char op)
+noeud_t *creerNoeudOp(char op)
 {
-    noeud *n = (noeud*) malloc(sizeof(noeud));
+    noeud_t *n = (noeud*) malloc(sizeof(noeud));
     n->type = OPERATEUR;
     n->elt.op = op;
 
@@ -94,19 +108,19 @@ noeud *creerNoeudOp(char op)
 
 }
 
-bool estFeuille(noeud *n)
+bool estFeuille(noeud_t *n)
 {
     return (n->noeudDroit == NULL && n->noeudGauche == NULL);
 }
 
 
 
-noeud *insererGaucheVal(noeud *r, int val)  // besoin pour le dernier noeud opérateur.
+noeud_t *insererGaucheVal(noeud_t *r, int val)  // besoin pour le dernier noeud opérateur.
 {   
     
 }
 
-noeud *insererGaucheOp(noeud *r, char op)   // On insère tous les opérateurs à gauche jusqu'à la fin de l'arbre ou le dernier opérateur aura 2 enfants valeures
+noeud_t *insererGaucheOp(noeud_t *r, char op)   // On insère tous les opérateurs à gauche jusqu'à la fin de l'arbre ou le dernier opérateur aura 2 enfants valeures
 {
     if (r == NULL) r = creerNoeudOp(op);
     insererGaucheOp(r, op);
@@ -114,13 +128,13 @@ noeud *insererGaucheOp(noeud *r, char op)   // On insère tous les opérateurs �
     return r;
 }
 
-noeud *insererDroit(noeud *r, int val)  // on ne va insérer que des valeures à droite 
+noeud_t *insererDroit(noeud_t *r, int val)  // on ne va insérer que des valeures à droite 
 {
 
 }
 
 
-void free_arbre(noeud *r)
+void free_arbre(noeud_t *r)
 {
     if (r == NULL) return;
     free_arbre(r->noeudGauche);
@@ -128,24 +142,90 @@ void free_arbre(noeud *r)
     free(r);
 }
 
-int remplirArbre(noeud *r, char **argv, int tailleCalcul)
+expression_t *creerExpression(char **argv, int tailleCalcul)
 {
-    int i = 0, nb1 = 0, nb2 = 0;
-    char op = '\0';
+    bool estDansPar = 0;
+    noeud_t * noeud;
+    
+    expression_t *e = (expression_t*) malloc(sizeof(expression));
+    e->termes = (noeud_t **) malloc(tailleCalcul*sizeof(noeud*));
+    e->priorite = (int*) malloc(tailleCalcul*sizeof(int));
+
 
     for (int i=0; i<tailleCalcul; i++)
     {
         char lu = argv[1][i];
-        switch (lu)
+        switch(lu)
         {
             case '+':
-                r = insererGaucheOp(r, lu);     // insère l'opérateur à gauche
-                break;
             case '-':
-                r = insererGaucheOp(r, lu);    // insère l'opérateur à gauche
+                noeud = creerNoeudOp(lu);
+                if (estDansPar) e->priorite[i] = 2;
+                else e->priorite[i] = 0;
                 break;
-            default: 
+            case '*':
+            case 'x':
+            case '/':
+            case ':':
+                noeud = creerNoeudOp(lu);
+                if (estDansPar) e->priorite[i] = 2;
+                else e->priorite[i] = 1;
+                break;
+            case '(':
+                estDansPar = 1;
+                break;
+            case ')':
+                estDansPar = 0;
+                break;
+            default:
+                noeud = creerNoeudVal((lu-'0'));
                 break;
         }
+        e->termes[i] = noeud;
     }
+    return e;
+}
+
+
+racine_t *trouverRacine(expression_t *e, tailleCalcul)
+{
+    racine_t *rt = (racine*)malloc(sizeof(racine_t));
+
+    int min = 100, indiceRacine = -1;   // On ne mets pas priorite[0] au cas ou le calcul commence par une parenthèse
+    for (int i=0; i<tailleCalcul; i++)
+    {
+        if (e->termes[i]->type == OPERATEUR)
+        {
+            if (e->priorite[i] < min)
+            {
+                min = e->priorite[i];
+                rt->racine = e->termes[i];
+                indiceRacine = i;
+            }
+        }
+    }
+    rt->exprGauche = malloc(indiceRacine*sizeof(expression_t));
+    rt->exprDroite = malloc((tailleCalcul-indiceRacine)*sizeof(expression_t));
+
+    for (int i=0; i<indiceRacine; i++)
+        rt->exprGauche[i] = e->termes[i];
+    
+    for (int i = indiceRacine+1; i<tailleCalcul; i++)
+    {
+        int k = i - (indiceRacine+1);    // 0, 1, 2...
+        rt->exprDroite[k] = e->termes[i];
+    }
+    return rt;
+}
+
+
+void construireArbre(racine_t *rt, expression_t *expression)
+{
+    racine = trouverRacine(expression)
+    noeud *racineGauche = trouverRacine(rt->exprGauche);
+    noeud *racineDroite = trouverRacine(rt->exprDroite);
+    racine->noeudGauche = racineGauche;
+    racine->noeudDroit = racineDroite;
+
+
 }
