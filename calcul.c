@@ -75,13 +75,13 @@ void verifArgs(int args)
 {
     if (args < 2)
     {
-        printf("Pas assez d'argument, donnez en argument un calcul (ex : ./calcul 3+2*3/4)\n");
+        printf("Pas assez d'argument, donnez en argument un calcul (ex : ./calcul 3+2*4)\n");
         exit(1);
     }
 
     if (args > 2)
     {
-        printf("Trop d'arguments, ne donnez qu'un seul calcul en argument (ex : ./calcul 3+2x3:4)\n");
+        printf("Trop d'arguments, ne donnez qu'un seul calcul en argument (ex : ./calcul 3+2*4)\n");
         exit(1);
     }
 }
