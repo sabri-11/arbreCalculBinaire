@@ -4,4 +4,4 @@ make
 pour le lancer : 
 ./calcul "votre calcul"
 
-ex : ./calcul "2+2"
+ex : ./calcul "2+2*3"
